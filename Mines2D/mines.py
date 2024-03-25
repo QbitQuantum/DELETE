@@ -1,11 +1,12 @@
 import pygame
 import random
+import time
 
 # Константы для настройки игры
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 NUM_CELLS_X = 12  # Количество клеток по горизонтали
-NUM_CELLS_Y = 6  # Количество клеток по вертикали
+NUM_CELLS_Y = 20  # Количество клеток по вертикали
 CELL_SIZE = min(SCREEN_WIDTH // NUM_CELLS_X, SCREEN_HEIGHT // NUM_CELLS_Y)
 PLAYER_SIZE = CELL_SIZE
 CRYSTAL_SIZE = CELL_SIZE  # Размер кристаллов вдвое меньше клеток
@@ -99,7 +100,8 @@ def game_loop():
     score = 0
     collected_crystals = {image: 0 for image in CRYSTAL_COLORS_SMALL + CRYSTAL_COLORS_BIG}
     clock = pygame.time.Clock()
-
+    
+    occupied_cells = [[False] * NUM_CELLS_X for _ in range(NUM_CELLS_Y)]
     running = True
     while running:  
         for event in pygame.event.get():
@@ -120,12 +122,31 @@ def game_loop():
         
         # Проверяем столкновения
         collected_crystals = check_collisions(player, crystals, collected_crystals)
+        DEEP_START = 2
+        while len(crystals) < 100: #DELETE
+            for cell_y in range(DEEP_START, 4):
+                for cell_x in range(NUM_CELLS_X):
+                    if not occupied_cells[cell_y][cell_x]:
+                        crystal_image = CRYSTAL_COLORS_SMALL[0]
+                        crystals.append(create_crystal_in_cell(cell_x, cell_y, crystal_image))
+                        occupied_cells[cell_y][cell_x] = True
 
-        # Добавляем новые кристаллы, если их меньше 13
-        while len(crystals) <20:
-            cell_x = random.randint(0, NUM_CELLS_X - 1)
-            cell_y = random.randint(0, NUM_CELLS_Y - 1)
-            crystals.append(create_crystal_in_cell(cell_x, cell_y, random.choice(CRYSTAL_COLORS_SMALL+CRYSTAL_COLORS_BIG)))
+        # Генерируем кристаллы на клетках, начиная с cell_y = 5
+            for cell_y in range(5, 9):
+                for cell_x in range(NUM_CELLS_X):
+                    if not occupied_cells[cell_y][cell_x]:
+                        crystal_images_to_add = [CRYSTAL_COLORS_SMALL[0], CRYSTAL_COLORS_BIG[0]]
+                        crystal_image = random.choice(crystal_images_to_add)
+                        crystals.append(create_crystal_in_cell(cell_x, cell_y, crystal_image))
+                        occupied_cells[cell_y][cell_x] = True
+
+        # Генерируем кристаллы на клетках, начиная с cell_y = 9
+            for cell_y in range(10, 16):
+                for cell_x in range(NUM_CELLS_X):
+                    if not occupied_cells[cell_y][cell_x]:
+                        crystal_image = CRYSTAL_COLORS_BIG[0]
+                        crystals.append(create_crystal_in_cell(cell_x, cell_y, crystal_image))
+                        occupied_cells[cell_y][cell_x] = True
 
         # Отрисовываем все объекты
         screen.fill(BACKGROUND_COLOR)
