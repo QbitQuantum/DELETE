@@ -1,0 +1,2 @@
+python mines.py
+pause
