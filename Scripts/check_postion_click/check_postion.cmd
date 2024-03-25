@@ -1,0 +1,2 @@
+python check_postion.py
+pause
