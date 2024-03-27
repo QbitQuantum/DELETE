@@ -1,0 +1,2 @@
+python generation_world_Perlin.py
+pause
