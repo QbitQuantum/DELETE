@@ -1,0 +1,11 @@
+def generate_crystals(occupied_cells, crystals):
+    for cell_y in range(5, 9):
+        for cell_x in range(NUM_CELLS_X):
+            if ((NUM_CELLS_X*cell_y/100 < 0.3)):
+                if not occupied_cells[cell_y][cell_x]:
+                    crystal_images_to_add = [CRYSTAL_COLORS_SMALL[0], CRYSTAL_COLORS_BIG[0]]
+                    crystal_image = random.choice(crystal_images_to_add)
+                    crystals.append(create_crystal_in_cell(cell_x, cell_y, crystal_image))
+                    occupied_cells[cell_y][cell_x] = True
+# Запуск таймера для генерации кристаллов
+pygame.time.set_timer(pygame.USEREVENT + 1, 5000)  # Генерация каждые 5 секунд
