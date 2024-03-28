@@ -4,19 +4,19 @@ import noise
 # Константы игры
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-CELL_SIZE = 7
+CELL_SIZE = 3
 COLL_X = SCREEN_WIDTH // CELL_SIZE
 COLL_Y = SCREEN_HEIGHT // CELL_SIZE
 DEEP_START = 3
 CRYSTAL_SIZE = CELL_SIZE
 PLAYER_SIZE = CELL_SIZE
 PLAYER_COLOR = (0, 255, 0)
-CRYSTAL_COLORS_SMALL = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]
-CRYSTAL_COLORS_BIG = [(50, 50, 0), (0, 50, 50), (50, 0, 50), (50, 50, 50)]
+CRYSTAL_COLORS_SMALL = [(0, 255, 0), (0, 0, 255), (255, 0, 0), (255, 0, 254), (0, 255,254)]
+CRYSTAL_COLORS_BIG = [(0, 54, 0), (0, 0, 54), (54, 0, 0), (54, 0, 53), (0, 54,53)]
+CRYSTAL_MULTIPLIERS_BIG = [4, 2, 2, 1, 1]
 CRYSTAL_COLORS_SKALL = [(0, 0, 0)]
 BACKGROUND_COLOR = (255, 255, 255)
 GRID_COLOR = (128, 128, 128)
-CRYSTAL_MULTIPLIERS_BIG = [1, 2, 3, 4]
 
 # Инициализация Pygame
 pygame.init()
@@ -30,12 +30,15 @@ class Player:
         self.x = x
         self.y = y
 
-    def move(self, dx, dy):
+    def move(self, dx, dy, game_map):
         new_x = self.x + dx
         new_y = self.y + dy
+        # Проверяем, что новая позиция находится в пределах игрового поля
         if 0 <= new_x < COLL_X and 0 <= new_y < COLL_Y:
-            self.x = new_x
-            self.y = new_y
+            # Проверяем, что в новой позиции нет кристаллов, которые нельзя проходить
+            if not any(crystal.x == new_x and crystal.y == new_y and crystal.color in CRYSTAL_COLORS_SKALL for crystal in game_map.crystals):
+                self.x = new_x
+                self.y = new_y
 
     def draw(self, surface):
         rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, PLAYER_SIZE, PLAYER_SIZE)
@@ -60,10 +63,10 @@ class GameMap:
         return noise.pnoise2(x / scale, y / scale, octaves=octaves, persistence=persistence, lacunarity=lacunarity)
 
     def generate_crystals(self):
-        SCALE = 15.0
+        SCALE = 29.0
         OCTAVES = 1
-        PERSISTENCE = 0.1
-        LACUNARITY = 1.8
+        PERSISTENCE = 0.5
+        LACUNARITY = 5
         all_noise_values = []
         crystal_map = [[None for _ in range(COLL_X)] for _ in range(COLL_Y)]
         for y in range(DEEP_START, COLL_Y):
@@ -72,7 +75,7 @@ class GameMap:
                 all_noise_values.append(noise_value)
                 crystal_x = int(x + noise_value)
                 crystal_y = int(y + noise_value)
-                if noise_value < 0.5:
+                if noise_value > 0.5:
                     color = random.choice(CRYSTAL_COLORS_BIG)
                 else:
                     color = random.choice(CRYSTAL_COLORS_SMALL)
@@ -128,24 +131,25 @@ def game_loop():
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a]:
-            player.move(-1, 0)
+            player.move(-1, 0, game_map)
         if keys[pygame.K_d]:
-            player.move(1, 0)
+            player.move(1, 0, game_map)
         if keys[pygame.K_w]:
-            player.move(0, -1)
+            player.move(0, -1, game_map)
         if keys[pygame.K_s]:
-            player.move(0, 1)
+            player.move(0, 1, game_map)
 
         # Проверка столкновений игрока с кристаллами
         for crystal in game_map.crystals[:]:
             if player.x == crystal.x and player.y == crystal.y:
-                if crystal.color in CRYSTAL_COLORS_BIG:
-                    index = CRYSTAL_COLORS_BIG.index(crystal.color)
-                    collected_crystals[CRYSTAL_COLORS_SMALL[index]] += CRYSTAL_MULTIPLIERS_BIG[index]
-                else:
-                    collected_crystals[crystal.color] += 1
-                score += 1
-                game_map.crystals.remove(crystal)
+                if crystal.color in CRYSTAL_COLORS_BIG or crystal.color in CRYSTAL_COLORS_SMALL:
+                    if crystal.color in CRYSTAL_COLORS_BIG:
+                        index = CRYSTAL_COLORS_BIG.index(crystal.color)
+                        collected_crystals[CRYSTAL_COLORS_SMALL[index]] += CRYSTAL_MULTIPLIERS_BIG[index]
+                    else:
+                        collected_crystals[crystal.color] += 1
+                    score += 1
+                    game_map.crystals.remove(crystal)
 
         # Отрисовка
         screen.fill(BACKGROUND_COLOR)
