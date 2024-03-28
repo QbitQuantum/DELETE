@@ -9,3 +9,32 @@ def generate_crystals(occupied_cells, crystals):
                     occupied_cells[cell_y][cell_x] = True
 # Запуск таймера для генерации кристаллов
 pygame.time.set_timer(pygame.USEREVENT + 1, 5000)  # Генерация каждые 5 секунд
+
+"""
+if occupied_cells[cell_y][cell_x]:
+    color = random.choice(CRYSTAL_COLORS_REDSCALL)
+    crystal = create_crystal_in_cell(crystal_x, crystal_y, color)
+    crystals.append(crystal)
+else:
+
+for cell_y in range(DEEP_START, COLL_Y):
+    for cell_x in range(COLL_X):
+        if occupied_cells[cell_y][cell_x]:
+            #print(f"ты лох. cell_x = {cell_x}, cell_y = {cell_y}")
+            color = random.choice(CRYSTAL_COLORS_REDSCALL)
+        crystal = create_crystal_in_cell(crystal_x, crystal_y, color)
+        crystals.append(crystal)
+        occupied_cells[crystal_y][crystal_x] = True
+"""
+"""
+# Генерируем кристаллы в каждой ячейке
+for cell_y in range(DEEP_START, COLL_Y):
+    for cell_x in range(COLL_X):
+        if cell_y > int(COLL_Y / 2):  # Генерация больших кристаллов на глубине DEEP_START
+            color = random.choice(CRYSTAL_COLORS_BIG)
+        else:
+            color = random.choice(CRYSTAL_COLORS_SMALL)
+        crystal = create_crystal_in_cell(cell_x, cell_y, color)
+        crystals.append(crystal)
+        occupied_cells[cell_y][cell_x] = True
+"""
