@@ -1,40 +1,15 @@
-def generate_crystals(occupied_cells, crystals):
-    for cell_y in range(5, 9):
-        for cell_x in range(NUM_CELLS_X):
-            if ((NUM_CELLS_X*cell_y/100 < 0.3)):
-                if not occupied_cells[cell_y][cell_x]:
-                    crystal_images_to_add = [CRYSTAL_COLORS_SMALL[0], CRYSTAL_COLORS_BIG[0]]
-                    crystal_image = random.choice(crystal_images_to_add)
-                    crystals.append(create_crystal_in_cell(cell_x, cell_y, crystal_image))
-                    occupied_cells[cell_y][cell_x] = True
-# Запуск таймера для генерации кристаллов
-pygame.time.set_timer(pygame.USEREVENT + 1, 5000)  # Генерация каждые 5 секунд
-
-"""
-if occupied_cells[cell_y][cell_x]:
-    color = random.choice(CRYSTAL_COLORS_REDSCALL)
-    crystal = create_crystal_in_cell(crystal_x, crystal_y, color)
-    crystals.append(crystal)
-else:
-
-for cell_y in range(DEEP_START, COLL_Y):
-    for cell_x in range(COLL_X):
-        if occupied_cells[cell_y][cell_x]:
-            #print(f"ты лох. cell_x = {cell_x}, cell_y = {cell_y}")
-            color = random.choice(CRYSTAL_COLORS_REDSCALL)
-        crystal = create_crystal_in_cell(crystal_x, crystal_y, color)
-        crystals.append(crystal)
-        occupied_cells[crystal_y][crystal_x] = True
-"""
-"""
-# Генерируем кристаллы в каждой ячейке
-for cell_y in range(DEEP_START, COLL_Y):
-    for cell_x in range(COLL_X):
-        if cell_y > int(COLL_Y / 2):  # Генерация больших кристаллов на глубине DEEP_START
-            color = random.choice(CRYSTAL_COLORS_BIG)
-        else:
-            color = random.choice(CRYSTAL_COLORS_SMALL)
-        crystal = create_crystal_in_cell(cell_x, cell_y, color)
-        crystals.append(crystal)
-        occupied_cells[cell_y][cell_x] = True
-"""
+def generate_crystals(self):
+        world = self.generate_perlin_noises(COLL_X, COLL_Y)
+        height = np.concatenate((np.full(COLL_Y // 2, 0.05), np.logspace(np.log10(0.05), np.log10(0.4), COLL_Y // 2)))
+        crystal_map = [[None for _ in range(COLL_X)] for _ in range(COLL_Y)]
+        for j in range(COLL_Y):
+            for i in range(len(world[j])):
+                if height[i] <= world[i][j] <= 0.5:
+                    color_index = int((world[i][j] - height[i]) / (0.5 - height[i]) * (len(CRYSTAL_COLORS_BIG)+1))
+                    color = CRYSTAL_COLORS_BIG[normalize_to_natural_range(color_index, 0, 4)]
+                elif world[i][j] < height[i]:
+                    color_index = int((world[i][j] / height[i]) * (len(CRYSTAL_COLORS_SMALL)+1))
+                    color = CRYSTAL_COLORS_SMALL[normalize_to_natural_range(color_index, 0, 4)]
+                crystal = Crystal(i, j, color)
+                self.crystals.append(crystal)
+                crystal_map[j][i] = crystal
