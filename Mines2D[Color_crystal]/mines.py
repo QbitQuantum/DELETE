@@ -1,10 +1,12 @@
 import pygame
 import random
 import noise
+import numpy as np
+
 # Константы игры
 SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-CELL_SIZE = 3
+SCREEN_HEIGHT = 800
+CELL_SIZE = 4
 COLL_X = SCREEN_WIDTH // CELL_SIZE
 COLL_Y = SCREEN_HEIGHT // CELL_SIZE
 DEEP_START = 3
@@ -59,37 +61,62 @@ class GameMap:
         self.crystals = []
         self.generate_crystals()
 
-    def generate_perlin_noise(self, x, y, scale, octaves, persistence, lacunarity):
-        return noise.pnoise2(x / scale, y / scale, octaves=octaves, persistence=persistence, lacunarity=lacunarity)
+    def generate(self, width, height, scale=300, octaves=7, persistence=0.5, lacunarity=2.0, seed=None):
+        """
+        #Шум перлинга
+        if seed is not None:
+            np.random.seed(seed)
+        shape = (width, height)
+        world = np.zeros(shape)
+        for i in range(width):
+            for j in range(height):
+                world[i][j] = noise.pnoise2(i/scale,
+                                            j/scale,
+                                            octaves=octaves,
+                                            persistence=persistence,
+                                            lacunarity=lacunarity,
+                                            repeatx=width,
+                                            repeaty=height,
+                                            base=0)
+                                            """
+        #Шум Диамонда
+        if seed is not None:
+            np.random.seed(seed)
+        shape = (width, height)
+        world = np.zeros(shape)
+        half_width = width // 2
+        half_height = height // 2
+        world[half_width][half_height] = 1.0
+
+        for i in range(octaves - 1, 0, -1):
+            size = 2 ** i
+            for x in range(0, width - size, size // 2):
+                for y in range(0, height - size, size // 2):
+                    square_average = (world[x][y] + world[x + size // 2][y] +
+                                    world[x][y + size // 2] + world[x + size // 2][y + size // 2]) * 0.25
+                    world[x + size // 2][y + size // 2] = square_average + np.random.uniform(-1, 1) * persistence
+        
+            for x in range(0, width, size):
+                for y in range(0, height, size):
+                    diamond_average = (world[x - size // 2][y] + world[x - size // 2][y] +
+                                    world[x][y - size // 2] + world[x][y - size // 2]) * 0.25
+                    world[x][y] = diamond_average + np.random.uniform(-1, 1) * persistence
+
+        return world
 
     def generate_crystals(self):
-        SCALE = 29.0
-        OCTAVES = 1
-        PERSISTENCE = 0.5
-        LACUNARITY = 5
-        all_noise_values = []
+        world = self.generate(COLL_X, COLL_Y)
+        height = np.concatenate((np.full(COLL_Y // 2, 0.05), np.logspace(np.log10(0.05), np.log10(0.4), COLL_Y // 2)))
         crystal_map = [[None for _ in range(COLL_X)] for _ in range(COLL_Y)]
-        for y in range(DEEP_START, COLL_Y):
-            for x in range(COLL_X):
-                noise_value = self.generate_perlin_noise(x, y, SCALE, OCTAVES, PERSISTENCE, LACUNARITY)
-                all_noise_values.append(noise_value)
-                crystal_x = int(x + noise_value)
-                crystal_y = int(y + noise_value)
-                if noise_value > 0.5:
+        for j in range(3, COLL_Y):
+            for i in range(len(world[j])):
+                if height[i] <= world[i][j] <= 0.5:
                     color = random.choice(CRYSTAL_COLORS_BIG)
-                else:
+                elif world[i][j] < height[i]:
                     color = random.choice(CRYSTAL_COLORS_SMALL)
-                crystal = Crystal(crystal_x, crystal_y, color)
+                crystal = Crystal(i, j, color)
                 self.crystals.append(crystal)
-                crystal_map[crystal_y][crystal_x] = crystal
-
-        # Fill in empty cells with a specific color
-        for y in range(DEEP_START-1, COLL_Y):
-            for x in range(COLL_X):
-                if crystal_map[y][x] is None:
-                    color = CRYSTAL_COLORS_SKALL[0]  # Replace with the desired color
-                    crystal = Crystal(x, y, color)
-                    self.crystals.append(crystal)
+                crystal_map[j][i] = crystal
 
 
     def draw(self, surface):
